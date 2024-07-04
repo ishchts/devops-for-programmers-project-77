@@ -1,0 +1,55 @@
+- name: Setup Terraform config
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tags:
+    - terraform
+  tasks:
+    - name: setup terraform vars
+      template:
+        src: templates/secrets.auto.tfvars.j2
+        dest: '../terraform/secrets.auto.tfvars'
+
+- name: Configure webservers
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Update cache
+      apt:
+        update_cache: yes
+
+    - include_role:
+        name: geerlingguy.pip
+  tags:
+    - setup
+
+- name: Deploy application
+  hosts: webservers
+  serial: 1
+  tasks:
+    - name: Create environment variables file from template
+      template:
+        src: env.j2
+        dest: .env
+
+    - name: Run application
+      community.docker.docker_container:
+        name: redmine-app
+        image: redmine
+        published_ports: "{{ app_port }}:3000"
+        restart_policy: always
+        restart: yes
+        container_default_behavior: no_defaults
+        pull: yes
+        env_file: .env
+  tags:
+    - deploy
+
+- name: Setting up Datadog agent
+  hosts: webservers
+  become: yes
+  roles:
+    - role: datadog.datadog
+  tags:
+    - setup
+    - monitoring

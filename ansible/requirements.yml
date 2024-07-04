@@ -1,0 +1,7 @@
+roles:
+  - name: geerlingguy.pip
+  - name: datadog.datadog
+collections:
+  - name: community.docker
+  - name: ansible.netcommon
+  - name: community.digitalocean

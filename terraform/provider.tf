@@ -12,6 +12,7 @@ variable "yc_token" {}
 variable "folder_id" {}
 
 provider "yandex" {
-  zone  = "ru-central1-a"
   token = var.yc_token
+  folder_id = var.folder_id
+  zone  = "ru-central1-a"
 }
