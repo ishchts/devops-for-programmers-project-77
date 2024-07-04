@@ -3,16 +3,23 @@ terraform {
     yandex = {
       source = "yandex-cloud/yandex"
     }
+    datadog = {
+      source = "DataDog/datadog"
+    }
   }
+
   required_version = ">= 0.13"
 }
 
-variable "yc_token" {}
-
-variable "folder_id" {}
-
 provider "yandex" {
-  token = var.yc_token
-  folder_id = var.folder_id
-  zone  = "ru-central1-a"
+  token     = var.yandex_token
+  cloud_id  = var.yandex_cloud_id
+  folder_id = var.yandex_folder_id
+  zone      = "ru-central1-a"
+}
+
+# Configure the Datadog provider
+provider "datadog" {
+  api_key = var.datadog_api_key
+  app_key = var.datadog_app_key
 }

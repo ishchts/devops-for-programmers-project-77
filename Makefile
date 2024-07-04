@@ -1,23 +1,25 @@
 make setup:
 	make -C terraform setup
+	make -C ansible setup
 
-validate:
-	make -C terraform validate
+ansible-generate-terraform-vars:
+	make -C ansible play-generate-terraform-vars
 
-plan:
+terraform-plan:
 	make -C terraform plan
 
-apply:
+terraform-apply:
 	make -C terraform apply
 
-destroy:
+terraform-destroy:
 	make -C terraform destroy
 
-list:
-	ansible-inventory -i ./ansible/inventory.ini --list
+ansible-prepare-infrastructure:
+	make -C ansible play-prepare-infrastructure
 
-ping:
-	ansible-playbook -i ./ansible/inventory.ini ./ansible/playbook.yml --tags ping
+ansible-deploy:
+	make -C ansible play-deploy
 
-playbook:
-	ansible-playbook -i ./ansible/inventory.ini ./ansible/playbook.yml
+create-infrastructure: ansible-generate-terraform-vars terraform-apply
+
+destroy-infrastructure: ansible-generate-terraform-vars terraform-destroy

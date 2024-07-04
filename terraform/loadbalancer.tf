@@ -1,25 +1,25 @@
-resource "yandex_alb_target_group" "foo" {
-  name = "my-target-group"
+resource "yandex_alb_target_group" "lb_target_group" {
+  name = "target-group-project-3"
 
   target {
-    ip_address = yandex_compute_instance.vm1-instance.network_interface.0.ip_address
-    subnet_id = "${yandex_vpc_subnet.default.id}"
+    subnet_id  = yandex_vpc_subnet.subnet-project-3.id
+    ip_address = yandex_compute_instance.vm-1.network_interface.0.ip_address
   }
 
   target {
-    ip_address = yandex_compute_instance.vm2-instance.network_interface.0.ip_address
-    subnet_id = "${yandex_vpc_subnet.default.id}"
+    subnet_id  = yandex_vpc_subnet.subnet-project-3.id
+    ip_address = yandex_compute_instance.vm-2.network_interface.0.ip_address
   }
 }
 
-resource "yandex_alb_backend_group" "test-backend-group" {
-  name = "my-backend-group"
+resource "yandex_alb_backend_group" "lb-backend-group" {
+  name = "backend-group-project-3"
 
   http_backend {
-    name = "test-http-backend"
-    target_group_ids = ["${yandex_alb_target_group.foo.id}"]
-    weight = 1
-    port = 3000
+    name             = "project-3-http-backend"
+    weight           = 1
+    port             = var.app_port
+    target_group_ids = [yandex_alb_target_group.lb_target_group.id]
     load_balancing_config {
       panic_threshold = 50
     }
@@ -33,41 +33,18 @@ resource "yandex_alb_backend_group" "test-backend-group" {
   }
 }
 
-resource "yandex_alb_http_router" "tf-router" {
-  name      = "my-http-router"
-  # labels {
-  #   tf-label    = "tf-label-value"
-  #   empty-label = "s"
-  # }
-}
-
-resource "yandex_alb_virtual_host" "lb-virtual-host" {
-  name           = "project-3-virtual-host"
-  http_router_id = yandex_alb_http_router.tf-router.id
-  route {
-    name = "project-3"
-    http_route {
-      http_route_action {
-        backend_group_id = yandex_alb_backend_group.test-backend-group.id
-        timeout          = "3s"
-      }
-    }
-  }
-}
-
-
-resource "yandex_alb_load_balancer" "test-balancer" {
-  name        = "my-load-balancer"
-  network_id  = yandex_vpc_network.default.id
+resource "yandex_alb_load_balancer" "lb-1" {
+  name       = "project-3-lb"
+  network_id = yandex_vpc_network.network-project-3.id
   allocation_policy {
     location {
       zone_id   = "ru-central1-a"
-      subnet_id = yandex_vpc_subnet.default.id 
+      subnet_id = yandex_vpc_subnet.subnet-project-3.id
     }
   }
 
   listener {
-    name = "my-listener"
+    name = "project-3-listener-http"
     endpoint {
       address {
         external_ipv4_address {
@@ -77,7 +54,46 @@ resource "yandex_alb_load_balancer" "test-balancer" {
     }
     http {
       handler {
-        http_router_id = yandex_alb_http_router.tf-router.id
+        http_router_id = yandex_alb_http_router.lb-router.id
+      }
+    }
+  }
+
+  # listener {
+  #   name = "project-3-listener-https"
+  #   endpoint {
+  #     ports = [443]
+  #     address {
+  #       external_ipv4_address {
+  #       }
+  #     }
+  #   }
+
+  #   tls {
+  #     default_handler {
+  #       certificate_ids = ["fpqcihlrj0o9seas10ja"]
+
+  #       http_handler {
+  #         http_router_id = yandex_alb_http_router.lb-router.id
+  #       }
+  #     }
+  #   }
+  # }
+}
+
+resource "yandex_alb_http_router" "lb-router" {
+  name = "project-3-http-router"
+}
+
+resource "yandex_alb_virtual_host" "lb-virtual-host" {
+  name           = "project-3-virtual-host"
+  http_router_id = yandex_alb_http_router.lb-router.id
+  route {
+    name = "project-3"
+    http_route {
+      http_route_action {
+        backend_group_id = yandex_alb_backend_group.lb-backend-group.id
+        timeout          = "3s"
       }
     }
   }
